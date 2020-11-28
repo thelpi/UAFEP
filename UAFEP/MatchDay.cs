@@ -33,5 +33,21 @@ namespace UAFEP
             }
             Status = MatchDayStatus.Complete;
         }
+
+        public override string ToString()
+        {
+            return string.Join(" || ", Matches);
+        }
+
+        public MatchDay Reverse()
+        {
+            var matches = new MatchUp[Matches.Count];
+            for (int i = 0; i < Matches.Count; i++)
+            {
+                var match = Matches.ElementAt(i);
+                matches[i] = new MatchUp(match.AwayTeam, match.HomeTeam);
+            }
+            return new MatchDay(matches);
+        }
     }
 }

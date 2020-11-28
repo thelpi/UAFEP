@@ -14,7 +14,6 @@ namespace UAFEP
         public bool Played { get; private set; }
         public int HomeScore { get; private set; }
         public int AwayScore { get; private set; }
-        // TODO: add penalty here
 
         public MatchUp(Team homeTeam, Team awayTeam)
         {
@@ -38,8 +37,7 @@ namespace UAFEP
             {
                 throw new InvalidOperationException("Not played yet.");
             }
-
-            // TODO: manage win by penalty
+            
             return HomeScore > AwayScore ? HomeTeam : (AwayScore > HomeScore ? AwayTeam : null);
         }
 
@@ -63,6 +61,11 @@ namespace UAFEP
             AwayScore = result.Item2;
 
             Played = true;
+        }
+
+        public override string ToString()
+        {
+            return $"{HomeTeam} - {AwayTeam}";
         }
 
         private static (int, int) ComputeMatchResult(

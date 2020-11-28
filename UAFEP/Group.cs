@@ -80,6 +80,11 @@ namespace UAFEP
         {
             var teamsList = new List<Team>(teams);
 
+            if (teamsList.Count == 4)
+            {
+                return BuildFourTeamsMatchDays(teamsList);
+            }
+
             var orderedMatchDays = new List<MatchDay>
             {
                 BuildFirstMatchDay(teamsList)
@@ -91,8 +96,35 @@ namespace UAFEP
             }
             
             orderedMatchDays.AddRange(BuildReversedMatchDays(orderedMatchDays));
-            
+
             return BuildAlternatedMatchDays(orderedMatchDays);
+        }
+
+        private static List<MatchDay> BuildFourTeamsMatchDays(List<Team> teamsList)
+        {
+            var mds = new List<MatchDay>
+            {
+                new MatchDay(new MatchUp[]
+                {
+                    new MatchUp(teamsList[0], teamsList[1]),
+                    new MatchUp(teamsList[2], teamsList[3])
+                }),
+                new MatchDay(new MatchUp[]
+                {
+                    new MatchUp(teamsList[3], teamsList[0]),
+                    new MatchUp(teamsList[1], teamsList[2])
+                }),
+                new MatchDay(new MatchUp[]
+                {
+                    new MatchUp(teamsList[1], teamsList[3]),
+                    new MatchUp(teamsList[0], teamsList[2])
+                })
+            };
+            mds.Add(mds[2].Reverse());
+            mds.Add(mds[0].Reverse());
+            mds.Add(mds[1].Reverse());
+
+            return mds;
         }
 
         private static MatchDay BuildFirstMatchDay(List<Team> teams)
@@ -165,27 +197,17 @@ namespace UAFEP
         {
             var alternedMatchDays = new List<MatchDay>();
             var switcher = false;
-            var cpt = 1;
-            foreach (var day in orderedMatchDays)
+            for (var i = 0; i < orderedMatchDays.Count; i++)
             {
-                if (switcher)
-                {
-                    var reverse = new List<MatchUp>();
-                    foreach (var cm in day.Matches)
-                        reverse.Add(new MatchUp(cm.AwayTeam, cm.HomeTeam));
-                    alternedMatchDays.Add(new MatchDay(reverse.ToArray()));
-                }
-                else
-                {
-                    alternedMatchDays.Add(day);
-                }
+                alternedMatchDays.Add(
+                    switcher
+                        ? orderedMatchDays[i].Reverse()
+                        : orderedMatchDays[i]);
 
-                if (cpt != orderedMatchDays.Count / 2)
+                if ((i + 1) != orderedMatchDays.Count / 2)
                 {
                     switcher = !switcher;
                 }
-
-                cpt++;
             }
 
             return alternedMatchDays;
