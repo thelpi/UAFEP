@@ -27,7 +27,7 @@ namespace UAFEPUnitTests
                 {
                     drawsCount++;
                 }
-                totalGoals += mu.HomeScore + mu.AwayScore;
+                totalGoals += mu.Score1 + mu.Score2;
             }
 
             var goalAvg = Math.Round(totalGoals / (double)matchesCount, 1);

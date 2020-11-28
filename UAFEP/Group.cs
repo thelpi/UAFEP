@@ -129,10 +129,10 @@ namespace UAFEP
                     BuildFirstMatchDay(teamsList)
                 };
 
-                var inversedExempt = false;
+                var exemptAsFirstTeam = false;
                 for (var i = 1; i < teamsList.Count - 1; i++)
                 {
-                    orderedMatchDays.Add(BuildNextMatchDay(teamsList, orderedMatchDays[i - 1], ref inversedExempt));
+                    orderedMatchDays.Add(BuildNextMatchDay(teamsList, orderedMatchDays[i - 1], ref exemptAsFirstTeam));
                 }
 
                 orderedMatchDays.AddRange(BuildReversedMatchDays(orderedMatchDays));
@@ -206,7 +206,7 @@ namespace UAFEP
                     .ToArray());
         }
 
-        private static MatchDay BuildNextMatchDay(List<Team> teams, MatchDay previousMatchDay, ref bool inversedExempt)
+        private static MatchDay BuildNextMatchDay(List<Team> teams, MatchDay previousMatchDay, ref bool exemptAsFirstTeam)
         {
             var oldTab = new Team[teams.Count / 2, 2];
             for (var j = 0; j < previousMatchDay.Matches.Count; j++)
@@ -214,13 +214,13 @@ namespace UAFEP
                 var match = previousMatchDay.Matches.ElementAt(j);
                 if (match.IsExempt)
                 {
-                    oldTab[j, 0] = inversedExempt ? match.AwayTeam : match.HomeTeam;
-                    oldTab[j, 1] = inversedExempt ? match.HomeTeam : match.AwayTeam;
+                    oldTab[j, 0] = exemptAsFirstTeam ? match.Team2 : match.Team1;
+                    oldTab[j, 1] = exemptAsFirstTeam ? match.Team1 : match.Team2;
                 }
                 else
                 {
-                    oldTab[j, 0] = match.HomeTeam;
-                    oldTab[j, 1] = match.AwayTeam;
+                    oldTab[j, 0] = match.Team1;
+                    oldTab[j, 1] = match.Team2;
                 }
             }
 
@@ -229,11 +229,11 @@ namespace UAFEP
             {
                 for (var l = 0; l < oldTab.GetLength(1); l++)
                 {
-                    bool newIsHome = false;
+                    bool newIsFirst = false;
                     if (k == 0 && l == 0)
                     {
                         newTab[0, 0] = oldTab[k, l];
-                        newIsHome = true;
+                        newIsFirst = true;
                     }
                     else if (l == 1 && k < oldTab.GetLength(0) - 1)
                     {
@@ -242,12 +242,12 @@ namespace UAFEP
                     else if (l == 1)
                     {
                         newTab[oldTab.GetLength(0) - 1, 0] = oldTab[k, l];
-                        newIsHome = true;
+                        newIsFirst = true;
                     }
                     else if (k > 1)
                     {
                         newTab[k - 1, 0] = oldTab[k, l];
-                        newIsHome = true;
+                        newIsFirst = true;
                     }
                     else
                     {
@@ -255,7 +255,7 @@ namespace UAFEP
                     }
                     if (oldTab[k, l] == null)
                     {
-                        inversedExempt = newIsHome;
+                        exemptAsFirstTeam = newIsFirst;
                     }
                 }
             }
@@ -276,9 +276,9 @@ namespace UAFEP
             return matchDays
                 .Select(md =>
                     new MatchDay(md.Matches
-                        .Select(cm => cm.AwayTeam == null
-                            ? new Match(cm.HomeTeam)
-                            : new Match(cm.AwayTeam, cm.HomeTeam))
+                        .Select(cm => cm.Team2 == null
+                            ? new Match(cm.Team1)
+                            : new Match(cm.Team2, cm.Team1))
                         .ToArray()))
                 .ToList();
         }

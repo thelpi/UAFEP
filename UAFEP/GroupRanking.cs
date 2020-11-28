@@ -40,8 +40,8 @@ namespace UAFEP
             Wins = matches.Count(m => m.GetWinner() == team);
             Draws = matches.Count(m => m.GetWinner() == null);
             Loses = matches.Count(m => m.GetLoser() == team);
-            Goals = matches.Sum(m => m.HomeTeam == team ? m.HomeScore : m.AwayScore);
-            GoalsAgainst = matches.Sum(m => m.HomeTeam == team ? m.AwayScore : m.HomeScore);
+            Goals = matches.Sum(m => m.Team1 == team ? m.Score1 : m.Score2);
+            GoalsAgainst = matches.Sum(m => m.Team1 == team ? m.Score2 : m.Score1);
         }
     }
 }
