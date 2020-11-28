@@ -4,12 +4,28 @@ using System.Linq;
 
 namespace UAFEP
 {
+    /// <summary>
+    /// Represents a group.
+    /// </summary>
     public class Group
     {
+        /// <summary>
+        /// Collection of <see cref="Team"/>.
+        /// </summary>
         public IReadOnlyCollection<Team> Teams { get; }
 
+        /// <summary>
+        /// Collection of <see cref="MatchDay"/>.
+        /// </summary>
         public IReadOnlyCollection<MatchDay> MatchDays { get; }
 
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="teams">Collection of <see cref="Team"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="teams"/> is <c>Null</c>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Not enough teams.</exception>
+        /// <exception cref="NotSupportedException">Teams count must be even.</exception>
         public Group(IEnumerable<Team> teams)
         {
             if (teams == null)
@@ -31,22 +47,34 @@ namespace UAFEP
             Teams = new List<Team>(teams);
         }
 
+        /// <summary>
+        /// Plays a single, or every, non-completed match day.
+        /// </summary>
+        /// <param name="all"><c>True</c> to play every match day; <c>False</c> to play a single one.</param>
         public void Play(bool all)
         {
             if (all)
             {
-                foreach (var md in MatchDays)
+                foreach (var md in MatchDays.Where(md => md.Status != MatchDayStatus.Complete))
                 {
                     md.Play();
                 }
             }
             else
             {
-                MatchDays.First().Play();
+                MatchDays.First(md => md.Status != MatchDayStatus.Complete).Play();
             }
         }
 
-        public IReadOnlyCollection<MatchUp> GetTeamMatches(Team team)
+        /// <summary>
+        /// Gets every <see cref="MatchUp"/> of a specified team.
+        /// </summary>
+        /// <param name="team">The team.</param>
+        /// <param name="played">Optionnal; allows to filter on (non-)played matches only.</param>
+        /// <returns>Collection of <see cref="MatchUp"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="team"/> is <c>Null</c>.</exception>
+        /// <exception cref="ArgumentException"><paramref name="team"/> is not from this group.</exception>
+        public IReadOnlyCollection<MatchUp> GetTeamMatches(Team team, bool? played = null)
         {
             if (team == null)
             {
@@ -58,7 +86,12 @@ namespace UAFEP
                 throw new ArgumentException("Team is not from this group.", nameof(team));
             }
 
-            return MatchDays.SelectMany(md => md.Matches.Where(m => m.IncludeTeam(team))).ToList();
+            return MatchDays
+                .SelectMany(md =>
+                    md.Matches.Where(m =>
+                        m.IncludeTeam(team)
+                        && (!played.HasValue || played.Value == m.Played)))
+                .ToList();
         }
 
         public IReadOnlyDictionary<int, GroupRanking> GetRanking()
