@@ -61,15 +61,15 @@ namespace UAFEP
         }
 
         /// <summary>
-        /// Gets every <see cref="MatchUp"/> of a specified team.
+        /// Gets every <see cref="Match"/> of a specified team.
         /// </summary>
         /// <param name="team">The team.</param>
         /// <param name="played">Optionnal; allows to filter on (non-)played matches only.</param>
         /// <param name="excludeExempt">Optionnal; excludes exempted matches.</param>
-        /// <returns>Collection of <see cref="MatchUp"/>.</returns>
+        /// <returns>Collection of <see cref="Match"/>.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="team"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentException"><paramref name="team"/> is not from this group.</exception>
-        public IReadOnlyCollection<MatchUp> GetTeamMatches(Team team, bool? played = null, bool excludeExempt = false)
+        public IReadOnlyCollection<Match> GetTeamMatches(Team team, bool? played = null, bool excludeExempt = false)
         {
             if (team == null)
             {
@@ -145,20 +145,20 @@ namespace UAFEP
         {
             var mds = new List<MatchDay>
             {
-                new MatchDay(new MatchUp[]
+                new MatchDay(new Match[]
                 {
-                    new MatchUp(teamsList[0], teamsList[1]),
-                    new MatchUp(teamsList[2])
+                    new Match(teamsList[0], teamsList[1]),
+                    new Match(teamsList[2])
                 }),
-                new MatchDay(new MatchUp[]
+                new MatchDay(new Match[]
                 {
-                    new MatchUp(teamsList[1], teamsList[2]),
-                    new MatchUp(teamsList[0])
+                    new Match(teamsList[1], teamsList[2]),
+                    new Match(teamsList[0])
                 }),
-                new MatchDay(new MatchUp[]
+                new MatchDay(new Match[]
                 {
-                    new MatchUp(teamsList[2], teamsList[0]),
-                    new MatchUp(teamsList[1])
+                    new Match(teamsList[2], teamsList[0]),
+                    new Match(teamsList[1])
                 })
             };
             mds.Add(mds[0].Reverse());
@@ -172,20 +172,20 @@ namespace UAFEP
         {
             var mds = new List<MatchDay>
             {
-                new MatchDay(new MatchUp[]
+                new MatchDay(new Match[]
                 {
-                    new MatchUp(teamsList[0], teamsList[1]),
-                    new MatchUp(teamsList[2], teamsList[3])
+                    new Match(teamsList[0], teamsList[1]),
+                    new Match(teamsList[2], teamsList[3])
                 }),
-                new MatchDay(new MatchUp[]
+                new MatchDay(new Match[]
                 {
-                    new MatchUp(teamsList[3], teamsList[0]),
-                    new MatchUp(teamsList[1], teamsList[2])
+                    new Match(teamsList[3], teamsList[0]),
+                    new Match(teamsList[1], teamsList[2])
                 }),
-                new MatchDay(new MatchUp[]
+                new MatchDay(new Match[]
                 {
-                    new MatchUp(teamsList[1], teamsList[3]),
-                    new MatchUp(teamsList[0], teamsList[2])
+                    new Match(teamsList[1], teamsList[3]),
+                    new Match(teamsList[0], teamsList[2])
                 })
             };
             mds.Add(mds[2].Reverse());
@@ -201,8 +201,8 @@ namespace UAFEP
                 Enumerable.Range(0, teams.Count)
                     .Where(i => i % 2 == 0)
                     .Select(i => teams[i + 1] == null ?
-                        new MatchUp(teams[i]) :
-                        new MatchUp(teams[i], teams[i + 1]))
+                        new Match(teams[i]) :
+                        new Match(teams[i], teams[i + 1]))
                     .ToArray());
         }
 
@@ -263,10 +263,10 @@ namespace UAFEP
             return new MatchDay(
                 Enumerable.Range(0, oldTab.GetLength(0))
                     .Select(k => newTab[k, 0] == null
-                        ? new MatchUp(newTab[k, 1])
+                        ? new Match(newTab[k, 1])
                         : (newTab[k, 1] == null
-                            ? new MatchUp(newTab[k, 0])
-                            : new MatchUp(newTab[k, 0], newTab[k, 1])
+                            ? new Match(newTab[k, 0])
+                            : new Match(newTab[k, 0], newTab[k, 1])
                         ))
                     .ToArray());
         }
@@ -277,8 +277,8 @@ namespace UAFEP
                 .Select(md =>
                     new MatchDay(md.Matches
                         .Select(cm => cm.AwayTeam == null
-                            ? new MatchUp(cm.HomeTeam)
-                            : new MatchUp(cm.AwayTeam, cm.HomeTeam))
+                            ? new Match(cm.HomeTeam)
+                            : new Match(cm.AwayTeam, cm.HomeTeam))
                         .ToArray()))
                 .ToList();
         }

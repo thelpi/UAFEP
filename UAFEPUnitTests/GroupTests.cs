@@ -34,10 +34,10 @@ namespace UAFEPUnitTests
                 Team lastOpponent = null;
                 int i = 0;
                 var opponents = new List<Team>();
-                foreach (var matchUp in group.GetTeamMatches(team, excludeExempt: true))
+                foreach (var match in group.GetTeamMatches(team, excludeExempt: true))
                 {
-                    bool isAway = matchUp.AwayTeam == team;
-                    var newlastOpponent = isAway ? matchUp.HomeTeam : matchUp.AwayTeam;
+                    bool isAway = match.AwayTeam == team;
+                    var newlastOpponent = isAway ? match.HomeTeam : match.AwayTeam;
                     if (i != 3 || teamsCount != 4)
                     {
                         Assert.IsFalse(newlastOpponent == lastOpponent);
@@ -60,7 +60,7 @@ namespace UAFEPUnitTests
                         away = isAway;
                         cumulative = 0;
                     }
-                    opponents.Add(isAway ? matchUp.HomeTeam : matchUp.AwayTeam);
+                    opponents.Add(isAway ? match.HomeTeam : match.AwayTeam);
                     i++;
                 }
                 var opponentsGroup = opponents.GroupBy(o => o);

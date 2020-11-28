@@ -12,7 +12,7 @@ namespace UAFEP
         /// <summary>
         /// Collection of matches.
         /// </summary>
-        public IReadOnlyCollection<MatchUp> Matches { get; }
+        public IReadOnlyCollection<Match> Matches { get; }
         /// <summary>
         /// Status; <see cref="MatchDayStatus"/>.
         /// </summary>
@@ -21,10 +21,10 @@ namespace UAFEP
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="matches">Array of <see cref="MatchUp"/>.</param>
+        /// <param name="matches">Array of <see cref="Match"/>.</param>
         /// <exception cref="ArgumentNullException"><paramref name="matches"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="matches"/> is empty.</exception>
-        public MatchDay(params MatchUp[] matches)
+        public MatchDay(params Match[] matches)
         {
             if (matches == null)
             {
@@ -36,7 +36,7 @@ namespace UAFEP
                 throw new ArgumentOutOfRangeException(nameof(matches), 0, "Matches list is empty.");
             }
 
-            Matches = new List<MatchUp>(matches);
+            Matches = new List<Match>(matches);
             Status = MatchDayStatus.Pending;
         }
 
@@ -65,7 +65,7 @@ namespace UAFEP
         }
 
         /// <summary>
-        /// Creates a new instance by reversing every <see cref="MatchUp"/> of the current instance.
+        /// Creates a new instance by reversing every <see cref="Match"/> of the current instance.
         /// </summary>
         /// <returns>Instance of <see cref="MatchDay"/>.</returns>
         public MatchDay Reverse()
@@ -73,8 +73,8 @@ namespace UAFEP
             return new MatchDay(
                 Enumerable.Range(0, Matches.Count).Select(i =>
                     Matches.ElementAt(i).IsExempt
-                        ? new MatchUp(Matches.ElementAt(i).HomeTeam)
-                        : new MatchUp(Matches.ElementAt(i).AwayTeam, Matches.ElementAt(i).HomeTeam)
+                        ? new Match(Matches.ElementAt(i).HomeTeam)
+                        : new Match(Matches.ElementAt(i).AwayTeam, Matches.ElementAt(i).HomeTeam)
                 ).ToArray());
         }
     }

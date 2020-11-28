@@ -18,7 +18,7 @@ namespace UAFEP
         public int GoalsAgainst { get; }
         public int GoalsDifference { get { return Goals - GoalsAgainst; } }
 
-        public GroupRanking(Team team, IReadOnlyCollection<MatchUp> matches)
+        public GroupRanking(Team team, IReadOnlyCollection<Match> matches)
         {
             if (team == null)
             {

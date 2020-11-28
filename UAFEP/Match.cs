@@ -5,7 +5,7 @@ namespace UAFEP
     /// <summary>
     /// Represents a match.
     /// </summary>
-    public class MatchUp
+    public class Match
     {
         private const double _homeAdvantageRate = 1.33;
         private const double _drawRate = 0.25;
@@ -45,7 +45,7 @@ namespace UAFEP
         /// <exception cref="ArgumentNullException"><paramref name="homeTeam"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentNullException"><paramref name="awayTeam"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentException">Away team is equals to home team.</exception>
-        public MatchUp(Team homeTeam, Team awayTeam) : this(homeTeam)
+        public Match(Team homeTeam, Team awayTeam) : this(homeTeam)
         {
             AwayTeam = awayTeam ?? throw new ArgumentNullException(nameof(awayTeam));
 
@@ -60,7 +60,7 @@ namespace UAFEP
         /// </summary>
         /// <param name="team">Team exempted.</param>
         /// <exception cref="ArgumentNullException"><paramref name="team"/> is <c>Null</c>.</exception>
-        public MatchUp(Team team)
+        public Match(Team team)
         {
             HomeTeam = team ?? throw new ArgumentNullException(nameof(team));
             AwayTeam = null;

@@ -7,10 +7,10 @@ using UAFEP;
 namespace UAFEPUnitTests
 {
     [TestClass]
-    public class MatchUpTests
+    public class MatchTests
     {
         [TestMethod]
-        public void MatchUp_Play_Nominal()
+        public void Match_Play_Nominal()
         {
             int drawsCount = 0;
             int totalGoals = 0;
@@ -18,7 +18,7 @@ namespace UAFEPUnitTests
 
             for (int i = 0; i < matchesCount; i++)
             {
-                var mu = new MatchUp(new Team { Name = "A" }, new Team { Name = "B" });
+                var mu = new Match(new Team { Name = "A" }, new Team { Name = "B" });
 
                 mu.Play();
 
