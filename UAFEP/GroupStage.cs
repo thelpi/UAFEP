@@ -19,9 +19,10 @@ namespace UAFEP
         /// </summary>
         /// <param name="teams">Collection of teams.</param>
         /// <param name="groupCount">Expected number of groups.</param>
+        /// <param name="oneLeg">Indicates if groups matches are one-leg on neutral ground.</param>
         /// <exception cref="ArgumentNullException"><paramref name="teams"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">At least one group is required.</exception>
-        public GroupStage(IList<Team> teams, int groupCount)
+        public GroupStage(IList<Team> teams, int groupCount, bool oneLeg)
         {
             if (teams == null)
             {
@@ -33,7 +34,7 @@ namespace UAFEP
                 throw new ArgumentOutOfRangeException(nameof(groupCount), groupCount, "At least one group is required.");
             }
 
-            Groups = BuildRandomizedGroups(teams, groupCount);
+            Groups = BuildRandomizedGroups(teams, groupCount, oneLeg);
         }
 
         /// <summary>
@@ -48,7 +49,7 @@ namespace UAFEP
             }
         }
 
-        private static List<Group> BuildRandomizedGroups(IList<Team> teams, int groupCount)
+        private static List<Group> BuildRandomizedGroups(IList<Team> teams, int groupCount, bool oneLeg)
         {
             var teamsPerGroup = teams.Count / groupCount;
             var teamsToDispatch = teams.Count % groupCount;
@@ -64,7 +65,7 @@ namespace UAFEP
                     currentTeamsPerGroup += 1;
                     teamsToDispatch--;
                 }
-                groups.Add(new Group(randomizedTeams.Take(currentTeamsPerGroup)));
+                groups.Add(new Group(randomizedTeams.Take(currentTeamsPerGroup), oneLeg));
                 randomizedTeams.RemoveRange(0, currentTeamsPerGroup);
             }
 

@@ -23,9 +23,10 @@ namespace UAFEP
         /// Constructor.
         /// </summary>
         /// <param name="teams">Collection of <see cref="Team"/>.</param>
+        /// <param name="oneLeg">Indicates if matches are one-leg on neutral ground.</param>
         /// <exception cref="ArgumentNullException"><paramref name="teams"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">At least 3 teams required.</exception>
-        public Group(IEnumerable<Team> teams)
+        public Group(IEnumerable<Team> teams, bool oneLeg)
         {
             if (teams == null)
             {
@@ -37,7 +38,7 @@ namespace UAFEP
                 throw new ArgumentOutOfRangeException(nameof(teams), teams.Count(), "At least 3 teams required.");
             }
 
-            MatchDays = BuildMatchDays(teams);
+            MatchDays = BuildMatchDays(teams, oneLeg);
             Teams = new List<Team>(teams);
         }
 
@@ -105,17 +106,17 @@ namespace UAFEP
             return rankings.ToDictionary(r => rankings.IndexOf(r) + 1, r => r);
         }
 
-        private static List<MatchDay> BuildMatchDays(IEnumerable<Team> teams)
+        private static List<MatchDay> BuildMatchDays(IEnumerable<Team> teams, bool oneLeg)
         {
             var teamsList = new List<Team>(teams);
 
             if (teamsList.Count == 3)
             {
-                return BuildThreeTeamsMatchDays(teamsList);
+                return BuildThreeTeamsMatchDays(teamsList, oneLeg);
             }
             else if (teamsList.Count == 4)
             {
-                return BuildFourTeamsMatchDays(teamsList);
+                return BuildFourTeamsMatchDays(teamsList, oneLeg);
             }
             else
             {
@@ -126,87 +127,93 @@ namespace UAFEP
 
                 var orderedMatchDays = new List<MatchDay>
                 {
-                    BuildFirstMatchDay(teamsList)
+                    BuildFirstMatchDay(teamsList, oneLeg)
                 };
 
                 var exemptAsFirstTeam = false;
                 for (var i = 1; i < teamsList.Count - 1; i++)
                 {
-                    orderedMatchDays.Add(BuildNextMatchDay(teamsList, orderedMatchDays[i - 1], ref exemptAsFirstTeam));
+                    orderedMatchDays.Add(BuildNextMatchDay(teamsList, orderedMatchDays[i - 1], ref exemptAsFirstTeam, oneLeg));
                 }
 
-                orderedMatchDays.AddRange(BuildReversedMatchDays(orderedMatchDays));
+                orderedMatchDays.AddRange(BuildReversedMatchDays(orderedMatchDays, oneLeg));
 
-                return BuildAlternatedMatchDays(orderedMatchDays);
+                return BuildAlternatedMatchDays(orderedMatchDays, oneLeg);
             }
         }
 
-        private static List<MatchDay> BuildThreeTeamsMatchDays(List<Team> teamsList)
+        private static List<MatchDay> BuildThreeTeamsMatchDays(List<Team> teamsList, bool oneLeg)
         {
             var mds = new List<MatchDay>
             {
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[0], teamsList[1]),
+                    new Match(teamsList[0], teamsList[1], oneLeg),
                     new Match(teamsList[2])
                 }),
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[1], teamsList[2]),
+                    new Match(teamsList[1], teamsList[2], oneLeg),
                     new Match(teamsList[0])
                 }),
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[2], teamsList[0]),
+                    new Match(teamsList[2], teamsList[0], oneLeg),
                     new Match(teamsList[1])
                 })
             };
-            mds.Add(mds[0].Reverse());
-            mds.Add(mds[1].Reverse());
-            mds.Add(mds[2].Reverse());
+            if (!oneLeg)
+            {
+                mds.Add(mds[0].Reverse());
+                mds.Add(mds[1].Reverse());
+                mds.Add(mds[2].Reverse());
+            }
 
             return mds;
         }
 
-        private static List<MatchDay> BuildFourTeamsMatchDays(List<Team> teamsList)
+        private static List<MatchDay> BuildFourTeamsMatchDays(List<Team> teamsList, bool oneLeg)
         {
             var mds = new List<MatchDay>
             {
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[0], teamsList[1]),
-                    new Match(teamsList[2], teamsList[3])
+                    new Match(teamsList[0], teamsList[1], oneLeg),
+                    new Match(teamsList[2], teamsList[3], oneLeg)
                 }),
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[3], teamsList[0]),
-                    new Match(teamsList[1], teamsList[2])
+                    new Match(teamsList[3], teamsList[0], oneLeg),
+                    new Match(teamsList[1], teamsList[2], oneLeg)
                 }),
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[1], teamsList[3]),
-                    new Match(teamsList[0], teamsList[2])
+                    new Match(teamsList[1], teamsList[3], oneLeg),
+                    new Match(teamsList[0], teamsList[2], oneLeg)
                 })
             };
-            mds.Add(mds[2].Reverse());
-            mds.Add(mds[0].Reverse());
-            mds.Add(mds[1].Reverse());
+            if (!oneLeg)
+            {
+                mds.Add(mds[2].Reverse());
+                mds.Add(mds[0].Reverse());
+                mds.Add(mds[1].Reverse());
+            }
 
             return mds;
         }
 
-        private static MatchDay BuildFirstMatchDay(List<Team> teams)
+        private static MatchDay BuildFirstMatchDay(List<Team> teams, bool oneLeg)
         {
             return new MatchDay(
                 Enumerable.Range(0, teams.Count)
                     .Where(i => i % 2 == 0)
                     .Select(i => teams[i + 1] == null ?
                         new Match(teams[i]) :
-                        new Match(teams[i], teams[i + 1]))
+                        new Match(teams[i], teams[i + 1], oneLeg))
                     .ToArray());
         }
 
-        private static MatchDay BuildNextMatchDay(List<Team> teams, MatchDay previousMatchDay, ref bool exemptAsFirstTeam)
+        private static MatchDay BuildNextMatchDay(List<Team> teams, MatchDay previousMatchDay, ref bool exemptAsFirstTeam, bool oneLeg)
         {
             var oldTab = new Team[teams.Count / 2, 2];
             for (var j = 0; j < previousMatchDay.Matches.Count; j++)
@@ -266,24 +273,24 @@ namespace UAFEP
                         ? new Match(newTab[k, 1])
                         : (newTab[k, 1] == null
                             ? new Match(newTab[k, 0])
-                            : new Match(newTab[k, 0], newTab[k, 1])
+                            : new Match(newTab[k, 0], newTab[k, 1], oneLeg)
                         ))
                     .ToArray());
         }
 
-        private static List<MatchDay> BuildReversedMatchDays(List<MatchDay> matchDays)
+        private static List<MatchDay> BuildReversedMatchDays(List<MatchDay> matchDays, bool oneLeg)
         {
             return matchDays
                 .Select(md =>
                     new MatchDay(md.Matches
                         .Select(cm => cm.Team2 == null
                             ? new Match(cm.Team1)
-                            : new Match(cm.Team2, cm.Team1))
+                            : new Match(cm.Team2, cm.Team1, oneLeg))
                         .ToArray()))
                 .ToList();
         }
 
-        private static List<MatchDay> BuildAlternatedMatchDays(List<MatchDay> orderedMatchDays)
+        private static List<MatchDay> BuildAlternatedMatchDays(List<MatchDay> orderedMatchDays, bool oneLeg)
         {
             var alternedMatchDays = new List<MatchDay>();
             var switcher = false;
@@ -298,6 +305,11 @@ namespace UAFEP
                 {
                     switcher = !switcher;
                 }
+            }
+
+            if (oneLeg)
+            {
+                return alternedMatchDays.Take(alternedMatchDays.Count / 2).ToList();
             }
 
             return alternedMatchDays;

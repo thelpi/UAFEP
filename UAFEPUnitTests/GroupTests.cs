@@ -10,22 +10,27 @@ namespace UAFEPUnitTests
     public class GroupTests
     {
         [DataTestMethod]
-        [DataRow(3)]
-        [DataRow(4)]
-        [DataRow(5)]
-        [DataRow(6)]
-        [DataRow(7)]
-        [DataRow(16)]
-        [DataRow(18)]
-        [DataRow(19)]
-        [DataRow(20)]
-        [DataRow(21)]
-        [DataRow(22)]
-        public void Group_Ctor_Nominal_NoMoreThanTwoMatchesAwayOrHome_NeverTwiceTheSameMatchInARow(int teamsCount)
+        [DataRow(3, false)]
+        [DataRow(3, true)]
+        [DataRow(4, false)]
+        [DataRow(4, true)]
+        [DataRow(5, false)]
+        [DataRow(5, true)]
+        [DataRow(6, false)]
+        [DataRow(6, true)]
+        [DataRow(7, false)]
+        [DataRow(7, true)]
+        [DataRow(16, false)]
+        [DataRow(18, false)]
+        [DataRow(19, false)]
+        [DataRow(20, false)]
+        [DataRow(21, false)]
+        [DataRow(22, false)]
+        public void Group_Ctor_Nominal_NoMoreThanTwoMatchesAwayOrHome_NeverTwiceTheSameMatchInARow(int teamsCount, bool oneLeg)
         {
             var teams = JsonConvert.DeserializeObject<List<Team>>(TestTools.GetFileContent("teams")).Take(teamsCount);
 
-            var group = new Group(teams);
+            var group = new Group(teams, oneLeg);
 
             foreach (var team in teams)
             {
@@ -46,13 +51,16 @@ namespace UAFEPUnitTests
                     if (isAway == away)
                     {
                         cumulative++;
-                        if (teams.Count() % 2 == 0)
+                        if (!oneLeg)
                         {
-                            Assert.IsFalse(cumulative > 1);
-                        }
-                        else
-                        {
-                            Assert.IsFalse(cumulative > 3);
+                            if (teams.Count() % 2 == 0)
+                            {
+                                Assert.IsFalse(cumulative > 1);
+                            }
+                            else
+                            {
+                                Assert.IsFalse(cumulative > 3);
+                            }
                         }
                     }
                     else
@@ -65,7 +73,7 @@ namespace UAFEPUnitTests
                 }
                 var opponentsGroup = opponents.GroupBy(o => o);
                 Assert.AreEqual(teams.Count() - 1, opponentsGroup.Count());
-                Assert.IsTrue(opponentsGroup.All(og => og.Count() == 2));
+                Assert.IsTrue(opponentsGroup.All(og => og.Count() == (oneLeg ? 1 : 2)));
             }
         }
     }

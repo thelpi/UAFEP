@@ -14,7 +14,7 @@ namespace UAFEPUnitTests
         {
             var teams = JsonConvert.DeserializeObject<List<Team>>(TestTools.GetFileContent("teams"));
 
-            var gs = new GroupStage(teams, 9);
+            var gs = new GroupStage(teams, 9, false);
 
             Assert.AreEqual(9, gs.Groups.Count);
             Assert.IsTrue(teams.All(t => gs.Groups.SelectMany(g => g.Teams).Contains(t)));

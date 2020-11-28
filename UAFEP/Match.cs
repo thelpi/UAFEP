@@ -47,11 +47,11 @@ namespace UAFEP
         /// </summary>
         /// <param name="firstTeam">First (home) team.</param>
         /// <param name="secondTeam">Second (away) team.</param>
-        /// <param name="neutral">Optionnal; indicates a neutral ground.</param>
+        /// <param name="neutral">Indicates a neutral ground.</param>
         /// <exception cref="ArgumentNullException"><paramref name="firstTeam"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentNullException"><paramref name="secondTeam"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentException">Second team is equals to first team.</exception>
-        public Match(Team firstTeam, Team secondTeam, bool neutral = false) : this(firstTeam)
+        public Match(Team firstTeam, Team secondTeam, bool neutral) : this(firstTeam)
         {
             Team2 = secondTeam ?? throw new ArgumentNullException(nameof(secondTeam));
 

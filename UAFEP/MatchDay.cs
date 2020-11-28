@@ -74,7 +74,7 @@ namespace UAFEP
                 Enumerable.Range(0, Matches.Count).Select(i =>
                     Matches.ElementAt(i).IsExempt
                         ? new Match(Matches.ElementAt(i).Team1)
-                        : new Match(Matches.ElementAt(i).Team2, Matches.ElementAt(i).Team1)
+                        : new Match(Matches.ElementAt(i).Team2, Matches.ElementAt(i).Team1, false)
                 ).ToArray());
         }
     }

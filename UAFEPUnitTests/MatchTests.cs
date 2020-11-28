@@ -18,7 +18,7 @@ namespace UAFEPUnitTests
 
             for (int i = 0; i < matchesCount; i++)
             {
-                var mu = new Match(new Team { Name = "A" }, new Team { Name = "B" });
+                var mu = new Match(new Team { Name = "A" }, new Team { Name = "B" }, false);
 
                 mu.Play();
 
