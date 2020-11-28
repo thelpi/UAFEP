@@ -1,5 +1,8 @@
-﻿Group of odd number of teams (exemption)
+﻿TODO
 Match on neutral ground (+ group without away/home matches)
 Penaltys
 Ranking based on particular
 Ranking equality
+
+BUGS
+When a group has a odd number of teams, a team can play until 4 matches in a row away or home

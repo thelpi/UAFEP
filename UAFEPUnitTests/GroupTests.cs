@@ -10,17 +10,17 @@ namespace UAFEPUnitTests
     public class GroupTests
     {
         [DataTestMethod]
+        [DataRow(3)]
         [DataRow(4)]
+        [DataRow(5)]
         [DataRow(6)]
-        [DataRow(8)]
-        [DataRow(10)]
-        [DataRow(12)]
-        [DataRow(14)]
+        [DataRow(7)]
         [DataRow(16)]
         [DataRow(18)]
+        [DataRow(19)]
         [DataRow(20)]
+        [DataRow(21)]
         [DataRow(22)]
-        [DataRow(24)]
         public void Group_Ctor_Nominal_NoMoreThanTwoMatchesAwayOrHome_NeverTwiceTheSameMatchInARow(int teamsCount)
         {
             var teams = JsonConvert.DeserializeObject<List<Team>>(TestTools.GetFileContent("teams")).Take(teamsCount);
@@ -33,9 +33,9 @@ namespace UAFEPUnitTests
                 bool? away = null;
                 Team lastOpponent = null;
                 int i = 0;
-                foreach (var matchDay in group.MatchDays)
+                var opponents = new List<Team>();
+                foreach (var matchUp in group.GetTeamMatches(team, excludeExempt: true))
                 {
-                    var matchUp = matchDay.Matches.Single(m => m.IncludeTeam(team));
                     bool isAway = matchUp.AwayTeam == team;
                     var newlastOpponent = isAway ? matchUp.HomeTeam : matchUp.AwayTeam;
                     if (i != 3 || teamsCount != 4)
@@ -46,15 +46,26 @@ namespace UAFEPUnitTests
                     if (isAway == away)
                     {
                         cumulative++;
-                        Assert.IsFalse(cumulative > 1);
+                        if (teams.Count() % 2 == 0)
+                        {
+                            Assert.IsFalse(cumulative > 1);
+                        }
+                        else
+                        {
+                            Assert.IsFalse(cumulative > 3);
+                        }
                     }
                     else
                     {
                         away = isAway;
                         cumulative = 0;
                     }
+                    opponents.Add(isAway ? matchUp.HomeTeam : matchUp.AwayTeam);
                     i++;
                 }
+                var opponentsGroup = opponents.GroupBy(o => o);
+                Assert.AreEqual(teams.Count() - 1, opponentsGroup.Count());
+                Assert.IsTrue(opponentsGroup.All(og => og.Count() == 2));
             }
         }
     }

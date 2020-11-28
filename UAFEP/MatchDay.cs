@@ -70,13 +70,12 @@ namespace UAFEP
         /// <returns>Instance of <see cref="MatchDay"/>.</returns>
         public MatchDay Reverse()
         {
-            var matches = new MatchUp[Matches.Count];
-            for (int i = 0; i < Matches.Count; i++)
-            {
-                var match = Matches.ElementAt(i);
-                matches[i] = new MatchUp(match.AwayTeam, match.HomeTeam);
-            }
-            return new MatchDay(matches);
+            return new MatchDay(
+                Enumerable.Range(0, Matches.Count).Select(i =>
+                    Matches.ElementAt(i).IsExempt
+                        ? new MatchUp(Matches.ElementAt(i).HomeTeam)
+                        : new MatchUp(Matches.ElementAt(i).AwayTeam, Matches.ElementAt(i).HomeTeam)
+                ).ToArray());
         }
     }
 }
