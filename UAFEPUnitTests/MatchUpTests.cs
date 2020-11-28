@@ -23,7 +23,7 @@ namespace UAFEPUnitTests
                 mu.Play();
 
                 Assert.IsTrue(mu.Played);
-                if (mu.Winner() == null)
+                if (mu.GetWinner() == null)
                 {
                     drawsCount++;
                 }

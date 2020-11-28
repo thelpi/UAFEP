@@ -4,11 +4,26 @@ using System.Linq;
 
 namespace UAFEP
 {
+    /// <summary>
+    /// Represents a match day.
+    /// </summary>
     public class MatchDay
     {
+        /// <summary>
+        /// Collection of matches.
+        /// </summary>
         public IReadOnlyCollection<MatchUp> Matches { get; }
+        /// <summary>
+        /// Status; <see cref="MatchDayStatus"/>.
+        /// </summary>
         public MatchDayStatus Status { get; private set; }
 
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="matches">Array of <see cref="MatchUp"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="matches"/> is <c>Null</c>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="matches"/> is empty.</exception>
         public MatchDay(params MatchUp[] matches)
         {
             if (matches == null)
@@ -25,8 +40,17 @@ namespace UAFEP
             Status = MatchDayStatus.Pending;
         }
 
+        /// <summary>
+        /// Plays every non-played match of the instance.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Already played.</exception>
         public void Play()
         {
+            if (Status == MatchDayStatus.Complete)
+            {
+                throw new InvalidOperationException("Already played.");
+            }
+
             foreach (var match in Matches.Where(m => !m.Played))
             {
                 match.Play();
@@ -34,11 +58,16 @@ namespace UAFEP
             Status = MatchDayStatus.Complete;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return string.Join(" || ", Matches);
         }
 
+        /// <summary>
+        /// Creates a new instance by reversing every <see cref="MatchUp"/> of the current instance.
+        /// </summary>
+        /// <returns>Instance of <see cref="MatchDay"/>.</returns>
         public MatchDay Reverse()
         {
             var matches = new MatchUp[Matches.Count];

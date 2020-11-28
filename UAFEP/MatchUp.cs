@@ -2,6 +2,9 @@
 
 namespace UAFEP
 {
+    /// <summary>
+    /// Represents a match.
+    /// </summary>
     public class MatchUp
     {
         private const double _homeAdvantageRate = 1.33;
@@ -9,15 +12,41 @@ namespace UAFEP
         private const double _goalsAvg = 2.5;
         private const double _goalsStdDev = 1.7;
 
+        /// <summary>
+        /// Home team; or team exempted.
+        /// </summary>
         public Team HomeTeam { get; }
+        /// <summary>
+        /// Away team; <c>Null</c> if exemption.
+        /// </summary>
         public Team AwayTeam { get; }
+        /// <summary>
+        /// Indicates if the match has been played.
+        /// </summary>
         public bool Played { get; private set; }
+        /// <summary>
+        /// Goals for the home team; <c>0</c> if exemption or match not played yet.
+        /// </summary>
         public int HomeScore { get; private set; }
+        /// <summary>
+        /// Goals for the away team; <c>0</c> if exemption or match not played yet.
+        /// </summary>
         public int AwayScore { get; private set; }
+        /// <summary>
+        /// <c>True</c> if it's an exemption.
+        /// </summary>
+        public bool IsExempt { get { return AwayTeam == null; } }
 
-        public MatchUp(Team homeTeam, Team awayTeam)
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="homeTeam">Home team.</param>
+        /// <param name="awayTeam">Away team.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="homeTeam"/> is <c>Null</c>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="awayTeam"/> is <c>Null</c>.</exception>
+        /// <exception cref="ArgumentException">Away team is equals to home team.</exception>
+        public MatchUp(Team homeTeam, Team awayTeam) : this(homeTeam)
         {
-            HomeTeam = homeTeam ?? throw new ArgumentNullException(nameof(homeTeam));
             AwayTeam = awayTeam ?? throw new ArgumentNullException(nameof(awayTeam));
 
             if (homeTeam == awayTeam)
@@ -26,27 +55,63 @@ namespace UAFEP
             }
         }
 
+        /// <summary>
+        /// Constructor for exemption.
+        /// </summary>
+        /// <param name="team">Team exempted.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="team"/> is <c>Null</c>.</exception>
+        public MatchUp(Team team)
+        {
+            HomeTeam = team ?? throw new ArgumentNullException(nameof(team));
+            AwayTeam = null;
+        }
+
+        /// <summary>
+        /// Checks if a specified team is part of the match.
+        /// </summary>
+        /// <param name="team">The team to check.</param>
+        /// <returns><c>True</c> if part of the match; <c>False</c> otherwise.</returns>
         public bool IncludeTeam(Team team)
         {
             return HomeTeam == team || AwayTeam == team;
         }
 
-        public Team Winner()
+        /// <summary>
+        /// Gets the winner team.
+        /// </summary>
+        /// <returns>Winner team. <c>Null</c> if draw or exempt.</returns>
+        /// <exception cref="InvalidOperationException">Not played yet.</exception>
+        public Team GetWinner()
         {
             if (!Played)
             {
                 throw new InvalidOperationException("Not played yet.");
             }
-            
+
+            if (IsExempt)
+            {
+                return null;
+            }
+
             return HomeScore > AwayScore ? HomeTeam : (AwayScore > HomeScore ? AwayTeam : null);
         }
 
-        public Team Loser()
+        /// <summary>
+        /// Gets the loser team.
+        /// </summary>
+        /// <returns>Loser team. <c>Null</c> if draw or exempt.</returns>
+        /// <exception cref="InvalidOperationException">Not played yet.</exception>
+        public Team GetLoser()
         {
-            var winner = Winner();
+            var winner = GetWinner();
             return winner == HomeTeam ? AwayTeam : (winner == AwayTeam ? HomeTeam : null);
         }
 
+        /// <summary>
+        /// Plays the match; does nothing for exemption.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Already played.</exception>
+        /// <remarks>Exception can still occur for exemption.</remarks>
         public void Play()
         {
             if (Played)
@@ -54,18 +119,33 @@ namespace UAFEP
                 throw new InvalidOperationException("Already played.");
             }
 
-            // use fake teams stats
-            var result = ComputeMatchResult(false, _homeAdvantageRate, _drawRate, _goalsAvg, _goalsStdDev, 3, 3, 3, 3);
+            if (!IsExempt)
+            {
+                // use fake teams stats
+                var result = ComputeMatchResult(false, _homeAdvantageRate, _drawRate, _goalsAvg, _goalsStdDev, 3, 3, 3, 3);
 
-            HomeScore = result.Item1;
-            AwayScore = result.Item2;
+                HomeScore = result.Item1;
+                AwayScore = result.Item2;
+            }
 
             Played = true;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
-            return $"{HomeTeam} - {AwayTeam}";
+            if (IsExempt)
+            {
+                return $"{HomeTeam} exempt.";
+            }
+            else if (Played)
+            {
+                return $"{HomeTeam} - {AwayTeam} ({HomeScore}-{AwayScore})";
+            }
+            else
+            {
+                return $"{HomeTeam} - {AwayTeam}";
+            }
         }
 
         private static (int, int) ComputeMatchResult(
