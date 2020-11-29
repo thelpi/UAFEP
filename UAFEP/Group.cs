@@ -26,6 +26,7 @@ namespace UAFEP
         /// <param name="oneLeg">Indicates if matches are one-leg on neutral ground.</param>
         /// <exception cref="ArgumentNullException"><paramref name="teams"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">At least 3 teams required.</exception>
+        /// <exception cref="ArgumentException">Teams list contains null.</exception>
         public Group(IEnumerable<Team> teams, bool oneLeg)
         {
             if (teams == null)
@@ -36,6 +37,11 @@ namespace UAFEP
             if (teams.Count() < 3)
             {
                 throw new ArgumentOutOfRangeException(nameof(teams), teams.Count(), "At least 3 teams required.");
+            }
+
+            if (teams.Contains(null))
+            {
+                throw new ArgumentException("Teams list contains null.", nameof(teams));
             }
 
             MatchDays = BuildMatchDays(teams, oneLeg);

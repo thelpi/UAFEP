@@ -24,6 +24,7 @@ namespace UAFEP
         /// <param name="matches">Array of <see cref="Match"/>.</param>
         /// <exception cref="ArgumentNullException"><paramref name="matches"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="matches"/> is empty.</exception>
+        /// <exception cref="ArgumentException">Matches list contains null.</exception>
         public MatchDay(params Match[] matches)
         {
             if (matches == null)
@@ -34,6 +35,11 @@ namespace UAFEP
             if (matches.Length == 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(matches), 0, "Matches list is empty.");
+            }
+
+            if (matches.Contains(null))
+            {
+                throw new ArgumentException("Matches list contains null.", nameof(matches));
             }
 
             Matches = new List<Match>(matches);

@@ -22,11 +22,17 @@ namespace UAFEP
         /// <param name="oneLeg">Indicates if groups matches are one-leg on neutral ground.</param>
         /// <exception cref="ArgumentNullException"><paramref name="teams"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">At least one group is required.</exception>
+        /// <exception cref="ArgumentException">Teams list contains null.</exception>
         public GroupStage(IList<Team> teams, int groupCount, bool oneLeg)
         {
             if (teams == null)
             {
                 throw new ArgumentNullException(nameof(teams));
+            }
+
+            if (teams.Contains(null))
+            {
+                throw new ArgumentException("Teams list contains null.", nameof(teams));
             }
 
             if (groupCount < 1 || groupCount > teams.Count)
