@@ -97,6 +97,10 @@ namespace UAFEP
                 .ToList();
         }
 
+        /// <summary>
+        /// Generates the ranking of the group.
+        /// </summary>
+        /// <returns>A dictionnary where the key is the rank.</returns>
         public IReadOnlyDictionary<int, GroupRanking> GetRanking()
         {
             var rankings = Teams.Select(t => new GroupRanking(t, GetTeamMatches(t))).ToList();
@@ -106,8 +110,6 @@ namespace UAFEP
                 .ThenByDescending(r => r.GoalsDifference)
                 .ThenByDescending(r => r.Goals)
                 .ToList();
-
-            // treat equality
 
             return rankings.ToDictionary(r => rankings.IndexOf(r) + 1, r => r);
         }
