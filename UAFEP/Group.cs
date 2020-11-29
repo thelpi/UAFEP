@@ -107,7 +107,7 @@ namespace UAFEP
 
             rankings = rankings
                 .OrderByDescending(r => r.Points)
-                .ThenByDescending(r => r.GoalAverage)
+                .ThenByDescending(r => r.GoalDifference)
                 .ThenByDescending(r => r.Goals)
                 .ToList();
 
