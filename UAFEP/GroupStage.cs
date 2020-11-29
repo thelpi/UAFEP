@@ -14,11 +14,6 @@ namespace UAFEP
         /// </summary>
         public IReadOnlyCollection<Group> Groups { get; }
 
-        public bool All()
-        {
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         /// Constructor.
         /// </summary>

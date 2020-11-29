@@ -103,11 +103,11 @@ namespace UAFEP
         /// <returns>A dictionnary where the key is the rank.</returns>
         public IReadOnlyDictionary<int, GroupRanking> GetRanking()
         {
-            var rankings = Teams.Select(t => new GroupRanking(t, GetTeamMatches(t))).ToList();
+            var rankings = Teams.Select(t => new GroupRanking(t, GetTeamMatches(t, played: true, excludeExempt: true))).ToList();
 
             rankings = rankings
                 .OrderByDescending(r => r.Points)
-                .ThenByDescending(r => r.GoalsDifference)
+                .ThenByDescending(r => r.GoalAverage)
                 .ThenByDescending(r => r.Goals)
                 .ToList();
 
