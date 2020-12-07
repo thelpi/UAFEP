@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace UAFEP
 {
@@ -41,6 +43,17 @@ namespace UAFEP
         /// <c>True</c> if it's an exemption.
         /// </summary>
         public bool IsExempt { get { return Team2 == null; } }
+        /// <summary>
+        /// Collection of <see cref="Team"/>.
+        /// </summary>
+        public IReadOnlyCollection<Team> Teams
+        {
+            get
+            {
+                return IsExempt ? new List<Team> { Team1 }
+                    : new List <Team> { Team1, Team2 };
+            }
+        }
 
         /// <summary>
         /// Constructor.
@@ -152,6 +165,109 @@ namespace UAFEP
             {
                 return $"{Team1} - {Team2}";
             }
+        }
+
+        /// <summary>
+        /// Computes and gets the team qualified for the next round, assuming a knock-out stage.
+        /// </summary>
+        /// <returns>The qualified team.</returns>
+        /// <exception cref="ArgumentException">Match is not neutral; a first-leg match is expected.</exception>
+        public Team GetQualified()
+        {
+            if (!Neutral)
+            {
+                throw new ArgumentException("Match is not neutral; a first-leg match is expected.");
+            }
+
+            return GetQualifiedInternal(null);
+        }
+
+        /// <summary>
+        /// Computes and gets the team qualified for the next round, assuming a knock-out stage.
+        /// </summary>
+        /// <returns>The qualified team.</returns>
+        /// <exception cref="ArgumentException">Match is neutral; a first-leg match is expected.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="firstLeg"/> is <c>Null</c>.</exception>
+        /// <exception cref="ArgumentException">Same teams are expected on first-leg.</exception>
+        /// <exception cref="ArgumentException">Reversed teams 1 and 2 expected for first-leg match..</exception>
+        public Team GetQualified(Match firstLeg)
+        {
+            if (Neutral)
+            {
+                throw new ArgumentException("Match is neutral; no first-leg match is expected.", nameof(firstLeg));
+            }
+
+            if (firstLeg == null)
+            {
+                throw new ArgumentNullException(nameof(firstLeg));
+            }
+
+            if (!firstLeg.Teams.All(t => Teams.Contains(t)))
+            {
+                throw new ArgumentException("Same teams are expected on first-leg.", nameof(firstLeg));
+            }
+
+            if (!IsExempt && (Team1 != firstLeg.Team2))
+            {
+                throw new ArgumentException("Reversed teams 1 and 2 expected for first-leg match.", nameof(firstLeg));
+            }
+
+            return GetQualifiedInternal(firstLeg);
+        }
+
+        private Team GetQualifiedInternal(Match firstLeg = null)
+        {
+            if (IsExempt)
+            {
+                return Team1;
+            }
+
+            if (firstLeg == null)
+            {
+                return GetWinner() ?? GetPenaltyShootoutWinner();
+            }
+
+            var firstLegWinner = firstLeg.GetWinner();
+            var secondLegWinner = GetWinner();
+
+            if (firstLegWinner != null && (secondLegWinner == null || secondLegWinner == firstLegWinner))
+            {
+                return firstLegWinner;
+            }
+            else if (secondLegWinner != null && firstLegWinner == null)
+            {
+                return secondLegWinner;
+            }
+            else
+            {
+                int firstTeamGoals = firstLeg.Score1 + Score2;
+                int secondteamsGoals = firstLeg.Score2 + Score1;
+                if (firstTeamGoals > secondteamsGoals)
+                {
+                    return Team2;
+                }
+                else if (firstTeamGoals < secondteamsGoals)
+                {
+                    return Team1;
+                }
+                else if (firstLeg.Score2 > Score2)
+                {
+                    return Team1;
+                }
+                else if (firstLeg.Score2 < Score2)
+                {
+                    return Team2;
+                }
+                else
+                {
+                    return GetPenaltyShootoutWinner();
+                }
+            }
+        }
+
+        private Team GetPenaltyShootoutWinner()
+        {
+            return Tools.Random.Next(0, 2) == 0 ? Team1 : Team2;
         }
 
         private static (int, int) ComputeMatchResult(
