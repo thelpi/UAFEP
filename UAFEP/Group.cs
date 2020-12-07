@@ -144,9 +144,15 @@ namespace UAFEP
                     orderedMatchDays.Add(BuildNextMatchDay(teamsList, orderedMatchDays[i - 1], ref exemptAsFirstTeam, oneLeg));
                 }
 
-                orderedMatchDays.AddRange(BuildReversedMatchDays(orderedMatchDays, oneLeg));
+                if (oneLeg)
+                {
+                    return orderedMatchDays;
+                }
 
-                return BuildAlternatedMatchDays(orderedMatchDays, oneLeg);
+                var inversedMatchDays = orderedMatchDays.Select(md => md.Reverse()).ToList();
+                orderedMatchDays.AddRange(inversedMatchDays);
+
+                return BuildAlternatedMatchDays(orderedMatchDays);
             }
         }
 
@@ -156,18 +162,18 @@ namespace UAFEP
             {
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[0], teamsList[1], oneLeg),
-                    new Match(teamsList[2])
+                    Match.CreateOneOrSingleLeg(teamsList[0], teamsList[1], oneLeg),
+                    Match.CreateOneOrSingleLeg(teamsList[2], null, oneLeg)
                 }),
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[1], teamsList[2], oneLeg),
-                    new Match(teamsList[0])
+                    Match.CreateOneOrSingleLeg(teamsList[1], teamsList[2], oneLeg),
+                    Match.CreateOneOrSingleLeg(teamsList[0], null, oneLeg)
                 }),
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[2], teamsList[0], oneLeg),
-                    new Match(teamsList[1])
+                    Match.CreateOneOrSingleLeg(teamsList[2], teamsList[0], oneLeg),
+                    Match.CreateOneOrSingleLeg(teamsList[1], null, oneLeg)
                 })
             };
             if (!oneLeg)
@@ -186,18 +192,18 @@ namespace UAFEP
             {
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[0], teamsList[1], oneLeg),
-                    new Match(teamsList[2], teamsList[3], oneLeg)
+                    Match.CreateOneOrSingleLeg(teamsList[0], teamsList[1], oneLeg),
+                    Match.CreateOneOrSingleLeg(teamsList[2], teamsList[3], oneLeg)
                 }),
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[3], teamsList[0], oneLeg),
-                    new Match(teamsList[1], teamsList[2], oneLeg)
+                    Match.CreateOneOrSingleLeg(teamsList[3], teamsList[0], oneLeg),
+                    Match.CreateOneOrSingleLeg(teamsList[1], teamsList[2], oneLeg)
                 }),
                 new MatchDay(new Match[]
                 {
-                    new Match(teamsList[1], teamsList[3], oneLeg),
-                    new Match(teamsList[0], teamsList[2], oneLeg)
+                    Match.CreateOneOrSingleLeg(teamsList[1], teamsList[3], oneLeg),
+                    Match.CreateOneOrSingleLeg(teamsList[0], teamsList[2], oneLeg)
                 })
             };
             if (!oneLeg)
@@ -215,9 +221,7 @@ namespace UAFEP
             return new MatchDay(
                 Enumerable.Range(0, teams.Count)
                     .Where(i => i % 2 == 0)
-                    .Select(i => teams[i + 1] == null ?
-                        new Match(teams[i]) :
-                        new Match(teams[i], teams[i + 1], oneLeg))
+                    .Select(i => Match.CreateOneOrSingleLeg(teams[i], teams[i + 1], oneLeg))
                     .ToArray());
         }
 
@@ -278,27 +282,12 @@ namespace UAFEP
             return new MatchDay(
                 Enumerable.Range(0, oldTab.GetLength(0))
                     .Select(k => newTab[k, 0] == null
-                        ? new Match(newTab[k, 1])
-                        : (newTab[k, 1] == null
-                            ? new Match(newTab[k, 0])
-                            : new Match(newTab[k, 0], newTab[k, 1], oneLeg)
-                        ))
+                        ? Match.CreateOneOrSingleLeg(newTab[k, 1], null, oneLeg)
+                        : Match.CreateOneOrSingleLeg(newTab[k, 0], newTab[k, 1], oneLeg))
                     .ToArray());
         }
 
-        private static List<MatchDay> BuildReversedMatchDays(List<MatchDay> matchDays, bool oneLeg)
-        {
-            return matchDays
-                .Select(md =>
-                    new MatchDay(md.Matches
-                        .Select(cm => cm.Team2 == null
-                            ? new Match(cm.Team1)
-                            : new Match(cm.Team2, cm.Team1, oneLeg))
-                        .ToArray()))
-                .ToList();
-        }
-
-        private static List<MatchDay> BuildAlternatedMatchDays(List<MatchDay> orderedMatchDays, bool oneLeg)
+        private static List<MatchDay> BuildAlternatedMatchDays(List<MatchDay> orderedMatchDays)
         {
             var alternedMatchDays = new List<MatchDay>();
             var switcher = false;
@@ -306,7 +295,7 @@ namespace UAFEP
             {
                 alternedMatchDays.Add(
                     switcher
-                        ? orderedMatchDays[i].Reverse()
+                        ? FindInversedMatchDay(orderedMatchDays, i)
                         : orderedMatchDays[i]);
 
                 if ((i + 1) != orderedMatchDays.Count / 2)
@@ -315,12 +304,18 @@ namespace UAFEP
                 }
             }
 
-            if (oneLeg)
-            {
-                return alternedMatchDays.Take(alternedMatchDays.Count / 2).ToList();
-            }
-
             return alternedMatchDays;
+        }
+
+        private static MatchDay FindInversedMatchDay(List<MatchDay> orderedMatchDays, int i)
+        {
+            var thisOrThat = orderedMatchDays.SingleOrDefault(md =>
+                md.Matches.All(m =>
+                    orderedMatchDays[i].Matches.Contains(m.FirstLeg)));
+            var thatOrThis = orderedMatchDays.SingleOrDefault(md =>
+                orderedMatchDays[i].Matches.Select(m => m.FirstLeg).All(m =>
+                    md.Matches.Contains(m)));
+            return thisOrThat ?? thatOrThis;
         }
     }
 }

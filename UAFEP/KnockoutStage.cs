@@ -125,7 +125,7 @@ namespace UAFEP
         {
             var winners = _matchDaysList[_nextTurnIndex]
                             .Matches
-                            .Select(m => m.GetQualified()) // todo stuff
+                            .Select(m => m.GetQualified())
                             .ToList();
             var involved = _matchDaysList[_nextTurnIndex]
                             .Matches
@@ -170,7 +170,7 @@ namespace UAFEP
             var matches = teams
                 .OrderBy(t => Tools.Random.Next())
                 .Where(t => teams.IndexOf(t) % 2 == 0)
-                .Select(t => new Match(t, teams[teams.IndexOf(t) + 1], neutral))
+                .Select(t => Match.CreateOneOrSingleLeg(t, teams[teams.IndexOf(t) + 1], neutral))
                 .ToArray();
 
             return new MatchDay(matches);

@@ -40,6 +40,10 @@ namespace UAFEP
         /// </summary>
         public int Score2 { get; private set; }
         /// <summary>
+        /// First leg match associated to this instance; <c>Null</c> if the instance is the first leg or if <see cref="Neutral"/> is <c>True</c>.
+        /// </summary>
+        public Match FirstLeg { get; }
+        /// <summary>
         /// <c>True</c> if it's an exemption.
         /// </summary>
         public bool IsExempt { get { return Team2 == null; } }
@@ -56,35 +60,56 @@ namespace UAFEP
         }
 
         /// <summary>
-        /// Constructor.
+        /// Creates a single match (one leg) or the first leg of a two leg match.
         /// </summary>
-        /// <param name="firstTeam">First (home) team.</param>
-        /// <param name="secondTeam">Second (away) team.</param>
-        /// <param name="neutral">Indicates a neutral ground.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="firstTeam"/> is <c>Null</c>.</exception>
-        /// <exception cref="ArgumentNullException"><paramref name="secondTeam"/> is <c>Null</c>.</exception>
-        /// <exception cref="ArgumentException">Second team is equals to first team.</exception>
-        public Match(Team firstTeam, Team secondTeam, bool neutral) : this(firstTeam)
+        /// <param name="team1">Home team.</param>
+        /// <param name="team2">Away team; <c>Null</c> for exemption.</param>
+        /// <param name="neutral">Single leg / neutral.</param>
+        /// <returns>Instance of <see cref="Match"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="team1"/> is <c>Null</c>.</exception>
+        public static Match CreateOneOrSingleLeg(Team team1, Team team2, bool neutral)
         {
-            Team2 = secondTeam ?? throw new ArgumentNullException(nameof(secondTeam));
-
-            if (firstTeam == secondTeam)
+            if (team1 == null)
             {
-                throw new ArgumentException("Away team is equals to home team.", nameof(secondTeam));
+                throw new ArgumentNullException(nameof(team1));
             }
 
-            Neutral = neutral;
+            return new Match(team1, team2, neutral, null);
         }
 
         /// <summary>
-        /// Constructor for exemption.
+        /// Creates the second leg of a two leg match.
         /// </summary>
-        /// <param name="firstTeam">Team exempted.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="firstTeam"/> is <c>Null</c>.</exception>
-        public Match(Team firstTeam)
+        /// <param name="firstLeg">The first leg.</param>
+        /// <returns>Instance of <see cref="Match"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="firstLeg"/> is <c>Null</c>.</exception>
+        /// <exception cref="ArgumentException">No second leg allowed on neutral.</exception>
+        public static Match CreateSecondLeg(Match firstLeg)
         {
-            Team1 = firstTeam ?? throw new ArgumentNullException(nameof(firstTeam));
-            Team2 = null;
+            if (firstLeg == null)
+            {
+                throw new ArgumentNullException(nameof(firstLeg));
+            }
+
+            if (firstLeg.Neutral)
+            {
+                throw new ArgumentException("No second leg allowed on neutral.", nameof(firstLeg));
+            }
+
+            if (firstLeg.IsExempt)
+            {
+                return new Match(firstLeg.Team1, firstLeg.Team2, false, firstLeg);
+            }
+
+            return new Match(firstLeg.Team2, firstLeg.Team1, false, firstLeg);
+        }
+
+        private Match(Team team1, Team team2, bool neutral, Match firstLeg)
+        {
+            Team1 = team1;
+            Team2 = team2;
+            Neutral = neutral;
+            FirstLeg = firstLeg;
         }
 
         /// <summary>
@@ -168,67 +193,25 @@ namespace UAFEP
         }
 
         /// <summary>
-        /// Computes and gets the team qualified for the next round, assuming a knock-out stage.
+        /// Gets the qualified team; considers both legs (if applicable) and simulates penalty shootout.
         /// </summary>
         /// <returns>The qualified team.</returns>
-        /// <exception cref="ArgumentException">Match is not neutral; a first-leg match is expected.</exception>
         public Team GetQualified()
-        {
-            if (!Neutral)
-            {
-                throw new ArgumentException("Match is not neutral; a first-leg match is expected.");
-            }
-
-            return GetQualifiedInternal(null);
-        }
-
-        /// <summary>
-        /// Computes and gets the team qualified for the next round, assuming a knock-out stage.
-        /// </summary>
-        /// <returns>The qualified team.</returns>
-        /// <exception cref="ArgumentException">Match is neutral; a first-leg match is expected.</exception>
-        /// <exception cref="ArgumentNullException"><paramref name="firstLeg"/> is <c>Null</c>.</exception>
-        /// <exception cref="ArgumentException">Same teams are expected on first-leg.</exception>
-        /// <exception cref="ArgumentException">Reversed teams 1 and 2 expected for first-leg match..</exception>
-        public Team GetQualified(Match firstLeg)
-        {
-            if (Neutral)
-            {
-                throw new ArgumentException("Match is neutral; no first-leg match is expected.", nameof(firstLeg));
-            }
-
-            if (firstLeg == null)
-            {
-                throw new ArgumentNullException(nameof(firstLeg));
-            }
-
-            if (!firstLeg.Teams.All(t => Teams.Contains(t)))
-            {
-                throw new ArgumentException("Same teams are expected on first-leg.", nameof(firstLeg));
-            }
-
-            if (!IsExempt && (Team1 != firstLeg.Team2))
-            {
-                throw new ArgumentException("Reversed teams 1 and 2 expected for first-leg match.", nameof(firstLeg));
-            }
-
-            return GetQualifiedInternal(firstLeg);
-        }
-
-        private Team GetQualifiedInternal(Match firstLeg = null)
         {
             if (IsExempt)
             {
                 return Team1;
             }
 
-            if (firstLeg == null)
+            if (FirstLeg == null)
             {
                 return GetWinner() ?? GetPenaltyShootoutWinner();
             }
 
-            var firstLegWinner = firstLeg.GetWinner();
+            var firstLegWinner = FirstLeg.GetWinner();
             var secondLegWinner = GetWinner();
+            int firstTeamGoals = FirstLeg.Score1 + Score2;
+            int secondteamsGoals = FirstLeg.Score2 + Score1;
 
             if (firstLegWinner != null && (secondLegWinner == null || secondLegWinner == firstLegWinner))
             {
@@ -238,30 +221,25 @@ namespace UAFEP
             {
                 return secondLegWinner;
             }
+            else if (firstTeamGoals > secondteamsGoals)
+            {
+                return Team2;
+            }
+            else if (firstTeamGoals < secondteamsGoals)
+            {
+                return Team1;
+            }
+            else if (FirstLeg.Score2 > Score2)
+            {
+                return Team1;
+            }
+            else if (FirstLeg.Score2 < Score2)
+            {
+                return Team2;
+            }
             else
             {
-                int firstTeamGoals = firstLeg.Score1 + Score2;
-                int secondteamsGoals = firstLeg.Score2 + Score1;
-                if (firstTeamGoals > secondteamsGoals)
-                {
-                    return Team2;
-                }
-                else if (firstTeamGoals < secondteamsGoals)
-                {
-                    return Team1;
-                }
-                else if (firstLeg.Score2 > Score2)
-                {
-                    return Team1;
-                }
-                else if (firstLeg.Score2 < Score2)
-                {
-                    return Team2;
-                }
-                else
-                {
-                    return GetPenaltyShootoutWinner();
-                }
+                return GetPenaltyShootoutWinner();
             }
         }
 
