@@ -11,6 +11,7 @@ namespace UAFEP
     {
         private int _nextTurnIndex = 0;
         private readonly List<Team> _teams;
+        private readonly List<Team> _firstRoundExemptedTeams;
         private readonly List<MatchDay> _matchDaysList;
         private readonly bool _oneLeg;
         private readonly bool _oneLegFinal;
@@ -73,9 +74,10 @@ namespace UAFEP
             _oneLeg = oneLeg;
             _oneLegFinal = oneLegFinal;
             _teams = new List<Team>(teams);
+            _firstRoundExemptedTeams = new List<Team>();
             _matchDaysList = new List<MatchDay>
             {
-                BuildFirstMatchDay(teams, oneLeg)
+                BuildFirstMatchDay(teams, oneLeg, _firstRoundExemptedTeams)
             };
             if (IsTwoLegContext(teams, oneLeg, oneLegFinal))
             {
@@ -104,6 +106,7 @@ namespace UAFEP
             if (_nextTurnIndex == _matchDaysList.Count - 1)
             {
                 var teams = GetNextRoundTeams();
+                _firstRoundExemptedTeams.Clear();
                 if (teams.Count > 1)
                 {
                     var matchDay = BuildMatchDayForTeams(teams, _oneLeg);
@@ -133,11 +136,11 @@ namespace UAFEP
                             .ToList();
 
             var teams = new List<Team>(winners);
-            teams.AddRange(_teams.Where(t => _teams.IndexOf(t) < involved.Min(it => _teams.IndexOf(it))));
+            teams.AddRange(_firstRoundExemptedTeams);
             return teams;
         }
 
-        private static MatchDay BuildFirstMatchDay(IList<Team> teams, bool neutral)
+        private static MatchDay BuildFirstMatchDay(IList<Team> teams, bool neutral, List<Team> exemptedTeams)
         {
             int previousTeamsCount = 0;
             foreach (int teamsCount in GetExpectedTeamsCountByTurn())
@@ -146,7 +149,7 @@ namespace UAFEP
                 {
                     if (teamsCount > teams.Count)
                     {
-                        teams = GetRemainingTeamsForPartialMatchDay(teams, previousTeamsCount);
+                        teams = GetRemainingTeamsForPartialMatchDay(teams, previousTeamsCount, exemptedTeams);
                     }
                     return BuildMatchDayForTeams(teams, neutral);
                 }
@@ -155,10 +158,10 @@ namespace UAFEP
             throw new InvalidOperationException("This case should never occurs.");
         }
 
-        private static IList<Team> GetRemainingTeamsForPartialMatchDay(IList<Team> teams, int previousTeamsCount)
+        private static IList<Team> GetRemainingTeamsForPartialMatchDay(IList<Team> teams, int previousTeamsCount, List<Team> exemptedTeams)
         {
             var remainingTeams = (teams.Count - previousTeamsCount) * 2;
-
+            exemptedTeams.AddRange(teams.Take(teams.Count - remainingTeams));
             return teams
                 .Skip(teams.Count - remainingTeams)
                 .Take(remainingTeams)

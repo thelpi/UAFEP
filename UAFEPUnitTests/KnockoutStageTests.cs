@@ -35,20 +35,35 @@ namespace UAFEPUnitTests
         {
             var teams = JsonConvert.DeserializeObject<List<Team>>(TestTools.GetFileContent("teams"));
 
-            var kos = new KnockoutStage(teams, false, false);
+            var kos = new KnockoutStage(teams, false, true);
 
-           /* kos.Play();
-
-            var matchDays = kos.NextMatches;
-
-            Assert.AreEqual(16, matchDays.Matches.Count);
-
-            Assert.IsTrue(teams.Skip(9).ToList().All(t => matchDays.Matches.SelectMany(m => m.Teams).Contains(t)));
+            Assert.IsTrue(teams.Skip(9).ToList().All(t => kos.NextMatchDayToPlay.Matches.SelectMany(m => m.Teams).Contains(t)));
 
             kos.Play();
+            kos.Play();
 
-            matchDays = kos.NextMatches;
-            Assert.IsNotNull(matchDays);*/
+            Assert.AreEqual(16, kos.NextMatchDayToPlay.Matches.Count);
+            Assert.IsTrue(teams.Take(9).ToList().All(t => kos.NextMatchDayToPlay.Matches.SelectMany(m => m.Teams).Contains(t)));
+
+            kos.Play();
+            kos.Play();
+
+            Assert.AreEqual(8, kos.NextMatchDayToPlay.Matches.Count);
+            kos.Play();
+            kos.Play();
+
+            Assert.AreEqual(4, kos.NextMatchDayToPlay.Matches.Count);
+            kos.Play();
+            kos.Play();
+
+            Assert.AreEqual(2, kos.NextMatchDayToPlay.Matches.Count);
+            kos.Play();
+            kos.Play();
+
+            Assert.AreEqual(1, kos.NextMatchDayToPlay.Matches.Count);
+            kos.Play();
+
+            Assert.IsNull(kos.NextMatchDayToPlay);
         }
     }
 }
