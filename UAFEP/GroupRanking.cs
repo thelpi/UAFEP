@@ -81,5 +81,15 @@ namespace UAFEP
             Goals = matches.Sum(m => m.Team1 == team ? m.Score1 : m.Score2);
             GoalsAgainst = matches.Sum(m => m.Team1 == team ? m.Score2 : m.Score1);
         }
+
+        internal static List<GroupRanking> Sort(IEnumerable<GroupRanking> rankings)
+        {
+            // TODO : add a set of rules
+            return rankings
+                .OrderByDescending(r => r.Points)
+                .ThenByDescending(r => r.GoalDifference)
+                .ThenByDescending(r => r.Goals)
+                .ToList();
+        }
     }
 }

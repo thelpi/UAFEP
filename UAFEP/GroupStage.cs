@@ -9,10 +9,25 @@ namespace UAFEP
     /// </summary>
     public class GroupStage
     {
+        private readonly List<Team> _qualifiedTeams;
+        private readonly GroupStageTieType _tieType;
+        private KnockoutStage _tieKnockoutStage;
+        private readonly int _qualifiedCount;
+
         /// <summary>
         /// Collection of <see cref="Group"/>.
         /// </summary>
         public IReadOnlyCollection<Group> Groups { get; }
+
+        /// <summary>
+        /// List of qualified teams; reliable once <see cref="IsComplete"/> is <c>True</c>.
+        /// </summary>
+        public IReadOnlyCollection<Team> QualifiedTeams { get { return _qualifiedTeams; } }
+
+        /// <summary>
+        /// Indicates if the stage is complete.
+        /// </summary>
+        public bool IsComplete { get; private set; }
 
         /// <summary>
         /// Constructor.
@@ -21,14 +36,17 @@ namespace UAFEP
         /// Collection of <see cref="Team"/> for each level of seed;
         /// every sub-collection except the last one must be a modulo of <paramref name="groupCount"/>.
         /// </param>
+        /// <param name="qualifiedCount">Count of teams qualified for next round (overall on every group).</param>
         /// <param name="groupCount">Expected number of groups.</param>
         /// <param name="oneLeg">Indicates if groups matches are one-leg on neutral ground.</param>
+        /// <param name="tieType"></param>
         /// <exception cref="ArgumentNullException"><paramref name="teamsBySeed"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentException"><paramref name="teamsBySeed"/> contains null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">At least one group is required.</exception>
         /// <exception cref="ArgumentException">One sub-list of teams contains null.</exception>
         /// <exception cref="ArgumentException">One sub-list is empty or not a modulo of <paramref name="groupCount"/>.</exception>
-        public GroupStage(int groupCount, bool oneLeg, params IList<Team>[] teamsBySeed)
+        /// <exception cref="ArgumentOutOfRangeException">Invalid <paramref name="qualifiedCount"/> value.</exception>
+        public GroupStage(int groupCount, bool oneLeg, int qualifiedCount, GroupStageTieType tieType, params IList<Team>[] teamsBySeed)
         {
             if (teamsBySeed == null)
             {
@@ -55,18 +73,76 @@ namespace UAFEP
                 throw new ArgumentOutOfRangeException(nameof(groupCount), groupCount, "At least one group is required.");
             }
 
+            if (qualifiedCount < 1 || qualifiedCount > teamsBySeed.SelectMany(ts => ts).Count())
+            {
+                throw new ArgumentOutOfRangeException(nameof(qualifiedCount), qualifiedCount, "Invalid qualified count.");
+            }
+
+            _qualifiedTeams = new List<Team>();
+            _tieType = tieType;
+            _qualifiedCount = qualifiedCount;
             Groups = BuildRandomizedGroups(teamsBySeed, groupCount, oneLeg);
         }
 
         /// <summary>
-        /// Plays a single (or all) <see cref="MatchDay"/> for every group.
+        /// Plays a single <see cref="MatchDay"/> for every group.
         /// </summary>
-        /// <param name="all"><c>True</c> to play every <see cref="MatchDay"/>; <c>False</c> to play a single <see cref="MatchDay"/>.</param>
-        public void Play(bool all)
+        /// <exception cref="InvalidOperationException">The group stage is complete.</exception>
+        public void Play()
+        {
+            if (IsComplete)
+            {
+                throw new InvalidOperationException("The group stage is complete.");
+            }
+
+            bool stillPlaying = false;
+            foreach (var group in Groups)
+            {
+                if (group.NextMatchDay != null)
+                {
+                    group.Play();
+                    stillPlaying = true;
+                }
+            }
+
+            if (!stillPlaying)
+            {
+                var divideQualifiedByGroup = _qualifiedCount / Groups.Count;
+                for (int i = 0; i < divideQualifiedByGroup; i++)
+                {
+                    _qualifiedTeams.AddRange(GetTeamsAtSpecifiedRanking(i + 1).Select(r => r.Team));
+                }
+
+                var restQualified = _qualifiedCount % Groups.Count;
+                if (restQualified > 0)
+                {
+                    switch (_tieType)
+                    {
+                        case GroupStageTieType.KnockOut:
+                            _tieKnockoutStage = new KnockoutStage(null, false, false);
+                            break;
+                        case GroupStageTieType.Mixed:
+                            _tieKnockoutStage = new KnockoutStage(null, false, false);
+                            break;
+                        case GroupStageTieType.Ranking:
+                            var rankings = GroupRanking.Sort(GetTeamsAtSpecifiedRanking(divideQualifiedByGroup));
+                            _qualifiedTeams.AddRange(rankings.Take(restQualified).Select(r => r.Team));
+                            break;
+                    }
+                }
+                else
+                {
+                    IsComplete = true;
+                }
+            }
+        }
+
+        private IEnumerable<GroupRanking> GetTeamsAtSpecifiedRanking(int r)
         {
             foreach (var group in Groups)
             {
-                group.Play(all);
+                var ranking = group.GetRanking();
+                yield return ranking[r];
             }
         }
 

@@ -20,7 +20,7 @@ namespace UAFEPUnitTests
             var seed2 = teams.Skip(groupCount).Take(groupCount * 2).ToList();
             var rest = teams.Skip(groupCount * 3).ToList();
 
-            var gs = new GroupStage(groupCount, false, seed1, seed2, rest);
+            var gs = new GroupStage(groupCount, false, 16, GroupStageTieType.Mixed, seed1, seed2, rest);
 
             Assert.AreEqual(groupCount, gs.Groups.Count);
             Assert.IsTrue(gs.Groups.All(g => g.Teams.Count(t => seed1.Contains(t)) == 1));

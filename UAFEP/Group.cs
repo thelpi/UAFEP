@@ -20,6 +20,11 @@ namespace UAFEP
         public IReadOnlyCollection<MatchDay> MatchDays { get; }
 
         /// <summary>
+        /// Gets next <see cref="MatchDay"/>; <c>Null</c> if group is completed.
+        /// </summary>
+        public MatchDay NextMatchDay { get { return MatchDays.FirstOrDefault(md => md.Status != MatchDayStatus.Complete); } }
+
+        /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="teams">Collection of <see cref="Team"/>.</param>
@@ -49,22 +54,17 @@ namespace UAFEP
         }
 
         /// <summary>
-        /// Plays a single, or every, non-completed match day.
+        /// Plays a single non-completed match day.
         /// </summary>
-        /// <param name="all"><c>True</c> to play every match day; <c>False</c> to play a single one.</param>
-        public void Play(bool all)
+        /// <exception cref="InvalidOperationException">No more match to play.</exception>
+        public void Play()
         {
-            if (all)
+            if (NextMatchDay == null)
             {
-                foreach (var md in MatchDays.Where(md => md.Status != MatchDayStatus.Complete))
-                {
-                    md.Play();
-                }
+                throw new InvalidOperationException("No more match to play.");
             }
-            else
-            {
-                MatchDays.First(md => md.Status != MatchDayStatus.Complete).Play();
-            }
+
+            NextMatchDay.Play();
         }
 
         /// <summary>
@@ -105,11 +105,7 @@ namespace UAFEP
         {
             var rankings = Teams.Select(t => new GroupRanking(t, GetTeamMatches(t, played: true, excludeExempt: true))).ToList();
 
-            rankings = rankings
-                .OrderByDescending(r => r.Points)
-                .ThenByDescending(r => r.GoalDifference)
-                .ThenByDescending(r => r.Goals)
-                .ToList();
+            rankings = GroupRanking.Sort(rankings);
 
             return rankings.ToDictionary(r => rankings.IndexOf(r) + 1, r => r);
         }

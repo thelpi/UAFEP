@@ -1,8 +1,0 @@
-﻿TODO
-Penaltys
-Ranking based on particular
-Ranking equality
-
-BUGS
-When a group has a odd number of teams, a team can play until 4 matches in a row away or home
-No duplicata check on several lists
