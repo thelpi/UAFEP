@@ -9,6 +9,7 @@ namespace UAFEP
     /// </summary>
     public class GroupStage
     {
+        private readonly bool _oneLeg;
         private readonly List<Team> _qualifiedTeams;
         private readonly GroupStageTieType _tieType;
         private KnockoutStage _tieKnockoutStage;
@@ -20,14 +21,14 @@ namespace UAFEP
         public IReadOnlyCollection<Group> Groups { get; }
 
         /// <summary>
-        /// List of qualified teams; reliable once <see cref="IsComplete"/> is <c>True</c>.
+        /// List of qualified teams.
         /// </summary>
         public IReadOnlyCollection<Team> QualifiedTeams { get { return _qualifiedTeams; } }
 
         /// <summary>
-        /// Indicates if the stage is complete.
+        /// Indicates if the group stage is complete.
         /// </summary>
-        public bool IsComplete { get; private set; }
+        public bool IsComplete { get { return _qualifiedTeams.Count == _qualifiedCount; } }
 
         /// <summary>
         /// Constructor.
@@ -78,6 +79,8 @@ namespace UAFEP
                 throw new ArgumentOutOfRangeException(nameof(qualifiedCount), qualifiedCount, "Invalid qualified count.");
             }
 
+            _tieKnockoutStage = null;
+            _oneLeg = oneLeg;
             _qualifiedTeams = new List<Team>();
             _tieType = tieType;
             _qualifiedCount = qualifiedCount;
@@ -90,7 +93,7 @@ namespace UAFEP
         /// <exception cref="InvalidOperationException">The group stage is complete.</exception>
         public void Play()
         {
-            if (IsComplete)
+            if (_qualifiedTeams.Count == _qualifiedCount)
             {
                 throw new InvalidOperationException("The group stage is complete.");
             }
@@ -107,33 +110,49 @@ namespace UAFEP
 
             if (!stillPlaying)
             {
-                var divideQualifiedByGroup = _qualifiedCount / Groups.Count;
-                for (int i = 0; i < divideQualifiedByGroup; i++)
+                if (_tieKnockoutStage != null)
                 {
-                    _qualifiedTeams.AddRange(GetTeamsAtSpecifiedRanking(i + 1).Select(r => r.Team));
-                }
-
-                var restQualified = _qualifiedCount % Groups.Count;
-                if (restQualified > 0)
-                {
-                    switch (_tieType)
-                    {
-                        case GroupStageTieType.KnockOut:
-                            _tieKnockoutStage = new KnockoutStage(null, false, false);
-                            break;
-                        case GroupStageTieType.Mixed:
-                            _tieKnockoutStage = new KnockoutStage(null, false, false);
-                            break;
-                        case GroupStageTieType.Ranking:
-                            var rankings = GroupRanking.Sort(GetTeamsAtSpecifiedRanking(divideQualifiedByGroup));
-                            _qualifiedTeams.AddRange(rankings.Take(restQualified).Select(r => r.Team));
-                            break;
-                    }
+                    PlayKnockOut();
                 }
                 else
                 {
-                    IsComplete = true;
+                    var divideQualifiedByGroup = _qualifiedCount / Groups.Count;
+                    for (int i = 0; i < divideQualifiedByGroup; i++)
+                    {
+                        _qualifiedTeams.AddRange(GetTeamsAtSpecifiedRanking(i + 1).Select(r => r.Team));
+                    }
+
+                    var restQualified = _qualifiedCount % Groups.Count;
+                    if (restQualified > 0)
+                    {
+                        var restTeams = GetTeamsAtSpecifiedRanking(divideQualifiedByGroup);
+                        var restTeamsSorted = GroupRanking.Sort(restTeams).Select(r => r.Team);
+                        switch (_tieType)
+                        {
+                            case GroupStageTieType.KnockOut:
+                                _tieKnockoutStage = new KnockoutStage(restTeamsSorted.ToList(), _oneLeg, _oneLeg, restQualified);
+                                PlayKnockOut();
+                                break;
+                            case GroupStageTieType.Mixed:
+                                _tieKnockoutStage = new KnockoutStage(restTeamsSorted.Take(restQualified).ToList(), _oneLeg, _oneLeg, restQualified);
+                                PlayKnockOut();
+                                break;
+                            case GroupStageTieType.Ranking:
+                                _qualifiedTeams.AddRange(restTeamsSorted.Take(restQualified));
+                                break;
+                        }
+                    }
                 }
+            }
+        }
+
+        private void PlayKnockOut()
+        {
+            _tieKnockoutStage.Play();
+            var qualifiedTeams = _tieKnockoutStage.GetQualifiedTeams();
+            if (qualifiedTeams.Count == _qualifiedCount % Groups.Count)
+            {
+                _qualifiedTeams.AddRange(qualifiedTeams);
             }
         }
 

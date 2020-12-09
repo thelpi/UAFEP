@@ -15,6 +15,7 @@ namespace UAFEP
         private readonly List<MatchDay> _matchDaysList;
         private readonly bool _oneLeg;
         private readonly bool _oneLegFinal;
+        private readonly int _stopAtQualifiedCount;
 
         /// <summary>
         /// Gets the next non-completed <see cref="MatchDay"/>.
@@ -23,8 +24,9 @@ namespace UAFEP
         {
             get
             {
-                return _matchDaysList[_nextTurnIndex].Status == MatchDayStatus.Complete ?
-                    null : _matchDaysList[_nextTurnIndex];
+                return _matchDaysList[_nextTurnIndex].Status == MatchDayStatus.Complete
+                    ? null
+                    : _matchDaysList[_nextTurnIndex];
             }
         }
 
@@ -45,11 +47,13 @@ namespace UAFEP
         /// <param name="teams">Collection of teams; sorted by the probablity of being exempted.</param>
         /// <param name="oneLeg">Is one-leg or not; doesn't apply for final.</param>
         /// <param name="oneLegFinal">Final is one-leg or not.</param>
+        /// <param name="stopAtQualifiedCount">Optionnaly; indicates the teams count before tke stage ends; default is <c>1</c>.</param>
         /// <exception cref="ArgumentNullException"><paramref name="teams"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentException"><paramref name="teams"/> contains <c>Null</c>.</exception>
         /// <exception cref="ArgumentException"><paramref name="teams"/> contains duplicate.</exception>
         /// <exception cref="ArgumentOutOfRangeException">At least two teams are required.</exception>
-        public KnockoutStage(IList<Team> teams, bool oneLeg, bool oneLegFinal)
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="stopAtQualifiedCount"/> is less than 1 or greater than teams count.</exception>
+        public KnockoutStage(IList<Team> teams, bool oneLeg, bool oneLegFinal, int stopAtQualifiedCount = 1)
         {
             if (teams == null)
             {
@@ -71,6 +75,12 @@ namespace UAFEP
                 throw new ArgumentOutOfRangeException(nameof(teams), teams.Count, "At least two teams are required.");
             }
 
+            if (stopAtQualifiedCount < 1 || stopAtQualifiedCount > teams.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(stopAtQualifiedCount), stopAtQualifiedCount, "Stop at qualified count is less than 1 or greater than teams count.");
+            }
+
+            _stopAtQualifiedCount = stopAtQualifiedCount;
             _oneLeg = oneLeg;
             _oneLegFinal = oneLegFinal;
             _teams = new List<Team>(teams);
@@ -103,9 +113,9 @@ namespace UAFEP
 
             _matchDaysList[_nextTurnIndex].Play();
 
-            if (_nextTurnIndex == _matchDaysList.Count - 1)
+            var teams = GetQualifiedTeams();
+            if (teams.Count > 0)
             {
-                var teams = GetNextRoundTeams();
                 _firstRoundExemptedTeams.Clear();
                 if (teams.Count > 1)
                 {
@@ -124,12 +134,21 @@ namespace UAFEP
             }
         }
 
-        private IList<Team> GetNextRoundTeams()
+        /// <summary>
+        /// Gets teams qualified for next round; empty if a two-leg round is in progress.
+        /// </summary>
+        /// <returns>Qualified teams.</returns>
+        public IList<Team> GetQualifiedTeams()
         {
+            if (_nextTurnIndex < _matchDaysList.Count - 1)
+            {
+                return new List<Team>();
+            }
+
             var winners = _matchDaysList[_nextTurnIndex]
-                            .Matches
-                            .Select(m => m.GetQualified())
-                            .ToList();
+                        .Matches
+                        .Select(m => m.GetQualified())
+                        .ToList();
             var involved = _matchDaysList[_nextTurnIndex]
                             .Matches
                             .SelectMany(m => m.Teams)
