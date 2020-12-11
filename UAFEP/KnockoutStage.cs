@@ -15,7 +15,6 @@ namespace UAFEP
         private readonly List<MatchDay> _matchDaysList;
         private readonly bool _oneLeg;
         private readonly bool _oneLegFinal;
-        private readonly int _stopAtQualifiedCount;
 
         /// <summary>
         /// Gets the next non-completed <see cref="MatchDay"/>.
@@ -47,13 +46,11 @@ namespace UAFEP
         /// <param name="teams">Collection of teams; sorted by the probablity of being exempted.</param>
         /// <param name="oneLeg">Is one-leg or not; doesn't apply for final.</param>
         /// <param name="oneLegFinal">Final is one-leg or not.</param>
-        /// <param name="stopAtQualifiedCount">Optionnaly; indicates the teams count before tke stage ends; default is <c>1</c>.</param>
         /// <exception cref="ArgumentNullException"><paramref name="teams"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentException"><paramref name="teams"/> contains <c>Null</c>.</exception>
         /// <exception cref="ArgumentException"><paramref name="teams"/> contains duplicate.</exception>
         /// <exception cref="ArgumentOutOfRangeException">At least two teams are required.</exception>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="stopAtQualifiedCount"/> is less than 1 or greater than teams count.</exception>
-        public KnockoutStage(IList<Team> teams, bool oneLeg, bool oneLegFinal, int stopAtQualifiedCount = 1)
+        public KnockoutStage(IList<Team> teams, bool oneLeg, bool oneLegFinal)
         {
             if (teams == null)
             {
@@ -75,12 +72,6 @@ namespace UAFEP
                 throw new ArgumentOutOfRangeException(nameof(teams), teams.Count, "At least two teams are required.");
             }
 
-            if (stopAtQualifiedCount < 1 || stopAtQualifiedCount > teams.Count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(stopAtQualifiedCount), stopAtQualifiedCount, "Stop at qualified count is less than 1 or greater than teams count.");
-            }
-
-            _stopAtQualifiedCount = stopAtQualifiedCount;
             _oneLeg = oneLeg;
             _oneLegFinal = oneLegFinal;
             _teams = new List<Team>(teams);

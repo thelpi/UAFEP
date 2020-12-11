@@ -11,8 +11,6 @@ namespace UAFEP
     {
         private readonly bool _oneLeg;
         private readonly List<Team> _qualifiedTeams;
-        private readonly GroupStageTieType _tieType;
-        private KnockoutStage _tieKnockoutStage;
         private readonly int _qualifiedCount;
 
         /// <summary>
@@ -40,14 +38,13 @@ namespace UAFEP
         /// <param name="qualifiedCount">Count of teams qualified for next round (overall on every group).</param>
         /// <param name="groupCount">Expected number of groups.</param>
         /// <param name="oneLeg">Indicates if groups matches are one-leg on neutral ground.</param>
-        /// <param name="tieType"></param>
         /// <exception cref="ArgumentNullException"><paramref name="teamsBySeed"/> is <c>Null</c>.</exception>
         /// <exception cref="ArgumentException"><paramref name="teamsBySeed"/> contains null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">At least one group is required.</exception>
         /// <exception cref="ArgumentException">One sub-list of teams contains null.</exception>
         /// <exception cref="ArgumentException">One sub-list is empty or not a modulo of <paramref name="groupCount"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Invalid <paramref name="qualifiedCount"/> value.</exception>
-        public GroupStage(int groupCount, bool oneLeg, int qualifiedCount, GroupStageTieType tieType, params IList<Team>[] teamsBySeed)
+        public GroupStage(int groupCount, bool oneLeg, int qualifiedCount, params IList<Team>[] teamsBySeed)
         {
             if (teamsBySeed == null)
             {
@@ -78,11 +75,9 @@ namespace UAFEP
             {
                 throw new ArgumentOutOfRangeException(nameof(qualifiedCount), qualifiedCount, "Invalid qualified count.");
             }
-
-            _tieKnockoutStage = null;
+            
             _oneLeg = oneLeg;
             _qualifiedTeams = new List<Team>();
-            _tieType = tieType;
             _qualifiedCount = qualifiedCount;
             Groups = BuildRandomizedGroups(teamsBySeed, groupCount, oneLeg);
         }
@@ -110,49 +105,19 @@ namespace UAFEP
 
             if (!stillPlaying)
             {
-                if (_tieKnockoutStage != null)
+                var divideQualifiedByGroup = _qualifiedCount / Groups.Count;
+                for (int i = 0; i < divideQualifiedByGroup; i++)
                 {
-                    PlayKnockOut();
+                    _qualifiedTeams.AddRange(GetTeamsAtSpecifiedRanking(i + 1).Select(r => r.Team));
                 }
-                else
+
+                var restQualified = _qualifiedCount % Groups.Count;
+                if (restQualified > 0)
                 {
-                    var divideQualifiedByGroup = _qualifiedCount / Groups.Count;
-                    for (int i = 0; i < divideQualifiedByGroup; i++)
-                    {
-                        _qualifiedTeams.AddRange(GetTeamsAtSpecifiedRanking(i + 1).Select(r => r.Team));
-                    }
-
-                    var restQualified = _qualifiedCount % Groups.Count;
-                    if (restQualified > 0)
-                    {
-                        var restTeams = GetTeamsAtSpecifiedRanking(divideQualifiedByGroup);
-                        var restTeamsSorted = GroupRanking.Sort(restTeams).Select(r => r.Team);
-                        switch (_tieType)
-                        {
-                            case GroupStageTieType.KnockOut:
-                                _tieKnockoutStage = new KnockoutStage(restTeamsSorted.ToList(), _oneLeg, _oneLeg, restQualified);
-                                PlayKnockOut();
-                                break;
-                            case GroupStageTieType.Mixed:
-                                _tieKnockoutStage = new KnockoutStage(restTeamsSorted.Take(restQualified).ToList(), _oneLeg, _oneLeg, restQualified);
-                                PlayKnockOut();
-                                break;
-                            case GroupStageTieType.Ranking:
-                                _qualifiedTeams.AddRange(restTeamsSorted.Take(restQualified));
-                                break;
-                        }
-                    }
+                    var restTeams = GetTeamsAtSpecifiedRanking(divideQualifiedByGroup);
+                    var restTeamsSorted = GroupRanking.Sort(restTeams).Select(r => r.Team);
+                    _qualifiedTeams.AddRange(restTeamsSorted.Take(restQualified));
                 }
-            }
-        }
-
-        private void PlayKnockOut()
-        {
-            _tieKnockoutStage.Play();
-            var qualifiedTeams = _tieKnockoutStage.GetQualifiedTeams();
-            if (qualifiedTeams.Count == _qualifiedCount % Groups.Count)
-            {
-                _qualifiedTeams.AddRange(qualifiedTeams);
             }
         }
 
