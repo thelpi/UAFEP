@@ -27,5 +27,24 @@ namespace UAFEPUnitTests
             Assert.IsTrue(gs.Groups.All(g => g.Teams.Count(t => seed2.Contains(t)) == 2));
             Assert.IsTrue(teams.All(t => gs.Groups.SelectMany(g => g.Teams).Contains(t)));
         }
+
+        [TestMethod]
+        public void GroupStage_GetQualified_Nominal()
+        {
+            const int qualifiedCount = 16;
+
+            var teams = JsonConvert.DeserializeObject<List<Team>>(TestTools.GetFileContent("teams"));
+
+            var gs = new GroupStage(9, false, qualifiedCount, teams);
+
+            Assert.AreEqual(0, gs.QualifiedTeams.Count);
+
+            while (!gs.IsComplete)
+            {
+                gs.Play();
+            }
+
+            Assert.AreEqual(qualifiedCount, gs.QualifiedTeams.Count);
+        }
     }
 }

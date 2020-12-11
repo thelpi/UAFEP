@@ -114,7 +114,7 @@ namespace UAFEP
                 var restQualified = _qualifiedCount % Groups.Count;
                 if (restQualified > 0)
                 {
-                    var restTeams = GetTeamsAtSpecifiedRanking(divideQualifiedByGroup);
+                    var restTeams = GetTeamsAtSpecifiedRanking(divideQualifiedByGroup + 1);
                     var restTeamsSorted = GroupRanking.Sort(restTeams).Select(r => r.Team);
                     _qualifiedTeams.AddRange(restTeamsSorted.Take(restQualified));
                 }
